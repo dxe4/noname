@@ -27,6 +27,10 @@ def get_sub_reddit_data(subreddit):
     #  data is stored incorrectly no time to deal with it on a hackathon tho
     return eval(s_reddit)
 
+def process_comment(comment):
+    body = comment["body"]
+    score = comment["score"]
+    pprint(comment)
 
 def process_post(post):
     comments = post["comments"]
@@ -34,6 +38,9 @@ def process_post(post):
     score = post["text"]
     score = post["title"]
     url = post["url"]
+
+    for comment in comments:
+        process_comment(comment)
     pprint(post)
 
 def process_category(category):
