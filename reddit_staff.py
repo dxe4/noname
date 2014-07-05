@@ -1,6 +1,10 @@
 import praw
 import redis
 from pprint import pprint
+from collections import defaultdict
+import time
+
+subreddits_programming = {"python", "linux", "clojure", "haskell", "git", "programming", "opensource"}
 
 info = {
     "hot": "get_hot",
@@ -17,6 +21,9 @@ def comment_info(comment):
     }
 
 def submission_info(submission):
+    print("fetching submission {}".format(submission.title))
+
+    time.sleep(0.5)  # Respect reddit for being awesome
     return  {
         "score": submission.score,
         "url": submission.url,
@@ -27,38 +34,32 @@ def submission_info(submission):
 
 
 def fetch_info(s_reddit, func, limit):
-    submissions = list(getattr(s_reddit, func)(limit=limit))
+    print("fetching info {}".format(func))
+    submissions = getattr(s_reddit, func)(limit=limit)
+    return [submission_info(i) for i in submissions]
 
 
-def fetch_subreddit(subreddit, limit=20):
+def fetch_subreddit(redis_client, subreddit, limit=20):
+    print("fetching sub reddit {}".format(subreddit))
+
     reddit = praw.Reddit(user_agent='seed_hack')
     s_reddit = reddit.get_subreddit(subreddit)
+
+    result = {
+        "url": s_reddit.url,
+        "name": s_reddit.display_name
+    }
     for k,v in info.items():
-        fetch_info(s_reddit, v, limit)
+        result[k] = fetch_info(s_reddit, v, limit)
 
+    pprint(result)
+    redis_client.set(subreddit, result)
 
+    print("done processing {}, waiting 5 seconds..".format(subreddit))
+    time.sleep(5)
 
-def foo():
-
-    a.get_top(),
-    f = a.get_top_from_all(limit=10)
-    print(list(f))
-
-    raise Exception
-    submissions = list(r.get_subreddit('opensource').get_hot(limit=5))
-
-    print([str(x) for x in submissions])
-    print([str(i) for i in submissions[0].comments])
-
-
-    pprint(vars(submissions[0].comments[0]))
-
-    # c.score, c.body
-
-def bar():
-    redis_c = redis.StrictRedis(host='localhost', port=6379, db=0)
-    redis_c.set('foo', {"foo": "bar"})
-    print(redis_c.get("foo"))
 
 # bar()
-fetch_subreddit("python")
+redis_c = redis.StrictRedis(host='localhost', port=6379, db=0)
+for subreddit in subreddits_programming:
+    fetch_subreddit(redis_c, subreddit)
