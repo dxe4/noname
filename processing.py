@@ -7,12 +7,14 @@ from collections import Counter
 subreddit_info_keys = ['name', 'url']
 subreddit_category_keys = ['top_week', 'hot', 'top_day', 'top_year', 'top_month']
 
+
 class HasCodeException(Exception):
     """
         Comments with code add noise in text processing & statistics
         If any code is detected in comment this exception will be raised
     """
     pass
+
 
 """
 ADJ	adjective	new, good, high, special, big, local
@@ -39,7 +41,7 @@ WH	wh determiner	who, which, when, what, where, how
 # ORIGIN: http://www.nltk.org/book/ch05.html#unsimplified-tags
 def findtags(tag_prefix, tagged_text):
     cfd = nltk.ConditionalFreqDist((tag, word) for (word, tag) in tagged_text
-                                  if tag.startswith(tag_prefix))
+                                   if tag.startswith(tag_prefix))
     return dict((tag, cfd[tag].keys()[:5]) for tag in cfd.conditions())
 
 
@@ -49,10 +51,11 @@ def get_stopwords():
         lines = [i.strip() for i in f.readlines()]
     return lines
 
+
 stopwords = get_stopwords()
 
-class ExtractMixIn(object):
 
+class ExtractMixIn(object):
     def __init__(self, *args, **kwargs):
         self.most_common = None
         self.nouns = None
@@ -80,6 +83,7 @@ class ExtractMixIn(object):
             "verbs": self.verbs,
         }
 
+
 class Comment(ExtractMixIn):
     def __init__(self, *args, **kwargs):
         super(Comment, self).__init__(*args, **kwargs)
@@ -87,7 +91,7 @@ class Comment(ExtractMixIn):
         self.score = kwargs["score"]
 
     def process(self):
-        if self.body.count("        ") >=2:
+        if self.body.count("        ") >= 2:
             raise HasCodeException
         if self.body:
             super(Comment, self).extract_text(self.body)
@@ -141,8 +145,8 @@ class Post(ExtractMixIn):
         })
         return _dict
 
-def get_sub_reddit_data(subreddit):
 
+def get_sub_reddit_data(subreddit):
     """
         Fetch data from redis. dump exists in repo
     :param subreddit: subreddit to fetch. redis-cli, keys * shows all possible choices
@@ -150,7 +154,7 @@ def get_sub_reddit_data(subreddit):
     """
     redis_c = redis.StrictRedis(host='localhost', port=6379, db=0)
     s_reddit = redis_c.get(subreddit)
-    #  print("EVIL "*1000) EVIL EVIL EVIL EVIL
+    # print("EVIL "*1000) EVIL EVIL EVIL EVIL
     #  data is stored incorrectly no time to deal with it on a hackathon tho
     return eval(s_reddit)
 
@@ -165,8 +169,11 @@ def process_category(category):
         post.process()
         posts.append(post)
 
+    sorted(posts, key=lambda x: x.score)
+
     for i in posts:
         pprint(i.to_dict())
+
 
 def process_subreddit(subreddit):
     data = get_sub_reddit_data(subreddit)
