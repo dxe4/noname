@@ -7,6 +7,13 @@ from collections import Counter
 subreddit_info_keys = ['name', 'url']
 subreddit_category_keys = ['top_week', 'hot', 'top_day', 'top_year', 'top_month']
 
+class HasCodeException(Exception):
+    """
+        Comments with code add noise in text processing & statistics
+        If any code is detected in comment this exception will be raised
+    """
+    pass
+
 """
 ADJ	adjective	new, good, high, special, big, local
 ADV	adverb	really, already, still, early, now
@@ -59,14 +66,16 @@ def get_sub_reddit_data(subreddit):
     return eval(s_reddit)
 
 def extract_text(text):
+    # print(text)
     tokens = word_tokenize(text)
 
-    non_skipped_tokens = [i for i in tokens if not i in stopwords and len(i) > 2]
-    counter = Counter(non_skipped_tokens)
+    # Do we need to keep stopwords & len<2? not sure
+    tokens = [i for i in tokens if not i in stopwords and len(i) > 2]
+    counter = Counter(tokens)
     pprint(counter.most_common(10))
 
     tagged = pos_tag(tokens)
-    print(tagged)
+    # print(tagged)
     nouns = findtags('NN', tagged)
     pprint(nouns)
 
@@ -78,6 +87,11 @@ def extract_text(text):
 def process_comment(comment):
     body = comment["body"]
     score = comment["score"]
+
+    if body.count("        ") >=2:
+        raise HasCodeException
+    if body:
+        extract_text(body)
     # pprint(comment)
 
 def process_post(post):
@@ -88,7 +102,8 @@ def process_post(post):
     url = post["url"]
 
     if text:
-        extract_text(text)
+        pass
+        # extract_text(text)
     else:
         print("no text ", url)
     comment_score_sum = sum([i["score"] for i in comments])
@@ -96,7 +111,10 @@ def process_post(post):
     print("comment_score_sum", comment_score_sum)
     print("\n\n")
     for comment in comments:
-        process_comment(comment)
+        try:
+            process_comment(comment)
+        except HasCodeException:
+            pass  # Comment has code therefore adds noise in the statistics
     # pprint(post)
 
 def process_category(category):
