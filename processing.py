@@ -51,6 +51,49 @@ def get_stopwords():
 
 stopwords = get_stopwords()
 
+class ExtractMixIn(object):
+    def extract_text(self, text):
+        # print(text)
+        tokens = word_tokenize(text)
+
+        # Do we need to keep stopwords & len<2? not sure
+        tokens = [i for i in tokens if not i in stopwords and len(i) > 2]
+        counter = Counter(tokens)
+        pprint(counter.most_common(10))
+
+        tagged = pos_tag(tokens)
+        # print(tagged)
+        nouns = findtags('NN', tagged)
+        pprint(nouns)
+
+        verbs = findtags('V', tagged)
+        pprint(verbs)
+        ntlk_text = Text(tokens)
+
+
+class Comment(ExtractMixIn):
+    def __init__(self, *args, **kwargs):
+        self.body = kwargs["body"]
+        self.score = kwargs["score"]
+
+    def process(self):
+        if self.body.count("        ") >=2:
+            raise HasCodeException
+        if self.body:
+            super(Comment, self).extract_text(self.body)
+
+class Post(ExtractMixIn):
+    def __init__(self, *args, **kwargs):
+        self.comments = [Comment(**i) for i in kwargs["comments"]]
+        self.score = kwargs["score"]
+        self.text = kwargs["text"]
+        self.title = kwargs["title"]
+        self.url = kwargs["url"]
+
+    def process(self):
+        if self.text:
+            super(Post, self).extract_text(self.text)
+
 
 def get_sub_reddit_data(subreddit):
 
@@ -65,54 +108,17 @@ def get_sub_reddit_data(subreddit):
     #  data is stored incorrectly no time to deal with it on a hackathon tho
     return eval(s_reddit)
 
-def extract_text(text):
-    # print(text)
-    tokens = word_tokenize(text)
-
-    # Do we need to keep stopwords & len<2? not sure
-    tokens = [i for i in tokens if not i in stopwords and len(i) > 2]
-    counter = Counter(tokens)
-    pprint(counter.most_common(10))
-
-    tagged = pos_tag(tokens)
-    # print(tagged)
-    nouns = findtags('NN', tagged)
-    pprint(nouns)
-
-    verbs = findtags('V', tagged)
-    pprint(verbs)
-    ntlk_text = Text(tokens)
-    print(text)
-
-def process_comment(comment):
-    body = comment["body"]
-    score = comment["score"]
-
-    if body.count("        ") >=2:
-        raise HasCodeException
-    if body:
-        extract_text(body)
-    # pprint(comment)
 
 def process_post(post):
-    comments = post["comments"]
-    score = post["score"]
-    text = post["text"]
-    title = post["title"]
-    url = post["url"]
-
-    if text:
-        pass
-        # extract_text(text)
+    if post.text:
+        post.process()
     else:
-        print("no text ", url)
-    comment_score_sum = sum([i["score"] for i in comments])
-    print("score", score)
-    print("comment_score_sum", comment_score_sum)
-    print("\n\n")
-    for comment in comments:
+        print("no text ", post.url)
+    comment_score_sum = sum([i.score for i in post.comments])
+
+    for comment in post.comments:
         try:
-            process_comment(comment)
+            comment.process()
         except HasCodeException:
             pass  # Comment has code therefore adds noise in the statistics
     # pprint(post)
@@ -122,7 +128,7 @@ def process_category(category):
     :param category: one of this ['top_week', 'hot', 'top_day', 'top_year', 'top_month']
     """
     for post in category:
-        process_post(post)
+        process_post(Post(**post))
 
 def process_subreddit(subreddit):
     data = get_sub_reddit_data(subreddit)
