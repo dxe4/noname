@@ -107,17 +107,24 @@ class Comment(ExtractMixIn):
         self.score = kwargs["score"]
 
     def process(self):
-        if self.body.count("        ") >= 2:
+        if self.body is not None and self.body.count("        ") >= 2:
             raise HasCodeException
         if self.body:
             self.details = Details(*super(Comment, self).extract_text(self.body))
 
     def to_dict(self):
-        return {
-            "body": self.body,
-            "score": self.score,
-            "details": self.details.to_dict()
-        }
+        try:
+            return {
+                "body": self.body,
+                "score": self.score,
+                "details": self.details.to_dict()
+            }
+        except AttributeError:
+            return {
+                "body": None,
+                "score": None,
+                "details": None,
+            }
 
 
 class Post(ExtractMixIn):
@@ -128,7 +135,7 @@ class Post(ExtractMixIn):
         self.text = kwargs["text"]
         self.title = kwargs["title"]
         self.url = kwargs["url"]
-        self.comment_score_sum = sum([i.score for i in self.comments])
+        self.comment_score_sum = sum([i.score for i in self.comments if i.score is not None])
         self.url_only = False
         self.external_url = None
         self.domain = urlparse(self.url).netloc
@@ -222,6 +229,8 @@ def process_subreddit(subreddit):
 def process_statistics(statistics, all_words, result, type):
     try:
         title_s = result[type]
+        if title_s is None:
+            return statistics, all_words
         for word in title_s["most_common_repeated"]:
             statistics["most_common_repeated"][word[0]] += word[1]
         for k, v in title_s["verbs"].items():
@@ -242,7 +251,7 @@ def process_statistics(statistics, all_words, result, type):
 
 
 if __name__ == "__main__":
-    result = process_subreddit("clojure")
+    result = process_subreddit("google")
     # pprint(result)
     print(len(result))
 
