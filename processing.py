@@ -260,47 +260,49 @@ def safe_del_key(_dict, key):
         pass
 
 
+def statistics_object():
+    return {
+        "most_common_repeated": defaultdict(int),
+        "verbs": defaultdict(int),
+        "nouns": defaultdict(int),
+        "other": defaultdict(int),
+        "all": defaultdict(int),
+    }
+
+
+def statistics_objects():
+    return [statistics_object() for i in range(0, 4)]
+
+
+min_count = {
+    0: 2,
+    1: 2,
+    2: 12,
+    3: 20,
+}
+
+
 def spam_eggs_bad_name(sub_reddit):
     result = process_subreddit(sub_reddit)
-    # pprint(result)
-    print(len(result))
 
-    def statistics_obj():
-        return {
-            "most_common_repeated": defaultdict(int),
-            "verbs": defaultdict(int),
-            "nouns": defaultdict(int),
-            "other": defaultdict(int),
-            "all": defaultdict(int),
-        }
-
-    title_statistics = statistics_obj()
-    text_statistics = statistics_obj()
-    comments_statistics = statistics_obj()
-    all_words = statistics_obj()
-
-    all_statistics = [text_statistics, title_statistics, comments_statistics, all_words]
+    all_statistics = statistics_objects()
+    title_statistics, text_statistics, comments_statistics, all_words = all_statistics
 
     for i in result:
-        text_statistics, all_words = process_statistics(text_statistics, all_words, i, "text_statistics")
-        title_statistics, all_words = process_statistics(title_statistics, all_words, i, "title_statistics")
+        text_statistics, all_words = process_statistics(
+            text_statistics, all_words, i, "text_statistics")
+
+        title_statistics, all_words = process_statistics(
+            title_statistics, all_words, i, "title_statistics")
 
         for comment in i["comments"]:
-            comments_statistics, all_words = process_statistics(comments_statistics, all_words, comment, "details")
+            comments_statistics, all_words = process_statistics(
+                comments_statistics, all_words, comment, "details")
 
-    foo = {
-        0: 2,
-        1: 2,
-        2: 12,
-        3: 20,
-    }
     for count, statistics in enumerate(all_statistics):
-        print(count)
-
         for k, v in statistics.items():
-            print(k)
             # https/http must have been captured from urls?
-            pprint({a: b for a, b in v.items() if b > foo[count]
+            pprint({a: b for a, b in v.items() if b > min_count[count]
                     if not a in ("http", "https")})
 
 
