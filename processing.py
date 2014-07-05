@@ -1,4 +1,5 @@
 from pprint import pprint
+import nltk
 from nltk import Text, word_tokenize, pos_tag
 import redis
 
@@ -27,6 +28,12 @@ VN	past participle	given, taken, begun, sung
 WH	wh determiner	who, which, when, what, where, how
 """
 
+# ORIGIN: http://www.nltk.org/book/ch05.html#unsimplified-tags
+def findtags(tag_prefix, tagged_text):
+    cfd = nltk.ConditionalFreqDist((tag, word) for (word, tag) in tagged_text
+                                  if tag.startswith(tag_prefix))
+    return dict((tag, cfd[tag].keys()[:5]) for tag in cfd.conditions())
+
 
 def get_stopwords():
     lines = []
@@ -50,6 +57,17 @@ def get_sub_reddit_data(subreddit):
     #  data is stored incorrectly no time to deal with it on a hackathon tho
     return eval(s_reddit)
 
+def extract_text(text):
+    tokens = word_tokenize(text)
+    tagged = pos_tag(tokens)
+    print(tagged)
+    nouns = findtags('NN', tagged)
+    pprint(nouns)
+
+    verbs = findtags('V', tagged)
+    pprint(verbs)
+    ntlk_text = Text(tokens)
+
 def process_comment(comment):
     body = comment["body"]
     score = comment["score"]
@@ -63,11 +81,7 @@ def process_post(post):
     url = post["url"]
 
     if text:
-        tokens = word_tokenize(text)
-        tagged = pos_tag(tokens)
-        print(tagged)
-        ntlk_text = Text(tokens)
-
+        extract_text(text)
     comment_score_sum = sum([i["score"] for i in comments])
 
     for comment in comments:
