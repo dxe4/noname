@@ -5,6 +5,7 @@ import redis
 from collections import Counter
 from urlparse import urlparse
 from collections import defaultdict
+import re
 
 subreddit_info_keys = ['name', 'url']
 subreddit_category_keys = ['top_week', 'hot', 'top_day', 'top_year', 'top_month']
@@ -62,7 +63,11 @@ class ExtractMixIn(object):
         self.nouns = None
         self.verbs = None
 
+    def clean_text(self, text):
+        return re.sub('[^a-zA-Z0-9]', ' ', text)
+
     def extract_text(self, text):
+        text = self.clean_text(text)
         tokens = word_tokenize(text)
         # Do we need to keep stopwords & len<2? not sure
         tokens = [i.lower() for i in tokens if not i.lower() in stopwords and len(i) > 3]
@@ -250,8 +255,13 @@ if __name__ == "__main__":
         for comment in i["comments"]:
             comments_statistics = process_statistics(comments_statistics, comment, "details")
 
-    for statistics in all_statistics:
+    foo = {
+        0: 2,
+        1: 2,
+        2: 12,
+    }
+    for count,statistics in enumerate(all_statistics):
+        print(count)
         for k,v in statistics.items():
             print(k)
-            pprint({a:b for a,b in v.items() if b > 2})
-
+            pprint({a:b for a,b in v.items() if b > foo[count]})
