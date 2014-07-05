@@ -89,10 +89,14 @@ class Post(ExtractMixIn):
         self.text = kwargs["text"]
         self.title = kwargs["title"]
         self.url = kwargs["url"]
+        self.comment_score_sum = sum([i.score for i in self.comments])
+        self.url_only = False
 
     def process(self):
         if self.text:
             super(Post, self).extract_text(self.text)
+        else:
+            self.url_only = True
 
 
 def get_sub_reddit_data(subreddit):
@@ -110,18 +114,17 @@ def get_sub_reddit_data(subreddit):
 
 
 def process_post(post):
-    if post.text:
-        post.process()
-    else:
-        print("no text ", post.url)
-    comment_score_sum = sum([i.score for i in post.comments])
+    post.process()
 
+    comments = []
     for comment in post.comments:
         try:
             comment.process()
+            comments.append(comment)
         except HasCodeException:
             pass  # Comment has code therefore adds noise in the statistics
-    # pprint(post)
+    # Remove comments that failed to be processed
+    post.comments = comments
 
 def process_category(category):
     """
