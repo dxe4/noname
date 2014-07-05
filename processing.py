@@ -116,8 +116,9 @@ class Post(ExtractMixIn):
         self.comment_score_sum = sum([i.score for i in self.comments])
         self.url_only = False
         self.external_url = None
-        if self.url:
-            self.domain = urlparse(self.url).netloc
+        self.domain = urlparse(self.url).netloc
+        if self.domain != "www.reddit.com":
+            self.external_url = self.domain
 
     def process(self):
         if self.text:
