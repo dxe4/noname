@@ -177,15 +177,19 @@ def process_category(category):
 
     posts = sorted(posts, key=lambda x: -x.score)
 
-    for i in posts:
-        pprint(i.to_dict())
-
+    result = [i.to_dict() for i in posts]
+    return result
 
 def process_subreddit(subreddit):
     data = get_sub_reddit_data(subreddit)
     name, url = data["name"], data["url"]
+    result = {}
     for category in subreddit_category_keys:
-        process_category(data[category])
+        if category == "hot":  # skip hot for now because its unique
+            continue
+        posts = process_category(data[category])
+        result[category] = posts
+    pprint(result)
 
 if __name__ == "__main__":
     process_subreddit("python")
