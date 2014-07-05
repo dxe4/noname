@@ -62,27 +62,32 @@ class ExtractMixIn(object):
         self.verbs = None
 
     def extract_text(self, text):
-        # print(text)
         tokens = word_tokenize(text)
-
         # Do we need to keep stopwords & len<2? not sure
         tokens = [i for i in tokens if not i in stopwords and len(i) > 2]
         counter = Counter(tokens)
-        self.most_common = [i for i in counter.most_common(10) if i[1] > 1]
+        most_common = [i for i in counter.most_common(50) if i[1] > 1]
 
         tagged = pos_tag(tokens)
-        self.nouns = findtags('NN', tagged)
+        nouns = findtags('NN', tagged)
 
-        self.verbs = findtags('V', tagged)
-        self.ntlk_text = Text(tokens)
+        verbs = findtags('V', tagged)
+        # self.ntlk_text = Text(tokens)
+
+        return most_common, nouns, verbs
+
+class Details(object):
+    def __init__(self,  most_common, nouns, verbs ):
+        self.most_common = most_common
+        self.nouns=nouns,
+        self.verbs = verbs
 
     def to_dict(self):
         return {
-            "common": self.most_common,
+            "most_common": self.most_common,
             "nouns": self.nouns,
-            "verbs": self.verbs,
+            "verbs": self.verbs
         }
-
 
 class Comment(ExtractMixIn):
     def __init__(self, *args, **kwargs):
@@ -94,15 +99,15 @@ class Comment(ExtractMixIn):
         if self.body.count("        ") >= 2:
             raise HasCodeException
         if self.body:
-            super(Comment, self).extract_text(self.body)
+            most_common, nouns, verbs  = super(Comment, self).extract_text(self.body)
+            self.details = Details(most_common, nouns, verbs)
 
     def to_dict(self):
-        _dict = super(Comment, self).to_dict()
-        _dict.update({
+        return {
             "body": self.body,
             "score": self.score,
-        })
-        return _dict
+            "details": self.details.to_dict()
+        }
 
 
 class Post(ExtractMixIn):
@@ -119,6 +124,11 @@ class Post(ExtractMixIn):
         self.domain = urlparse(self.url).netloc
         if self.domain != "www.reddit.com":
             self.external_url = self.domain
+            self.title_statistics = None
+            self.text_statistics = None
+        else:
+            self.title_statistics = Details(*self.extract_text(self.title))
+            self.text_statistics  = Details(*self.extract_text(self.text))
 
     def process(self):
         if self.text:
@@ -137,8 +147,7 @@ class Post(ExtractMixIn):
         self.comments = comments
 
     def to_dict(self):
-        _dict = super(Post, self).to_dict()
-        _dict.update({
+        _dict = {
             "score": self.score,
             "text": self.text,
             "title": self.title,
@@ -148,7 +157,12 @@ class Post(ExtractMixIn):
             "comments": [i.to_dict() for i in self.comments],
             "external_url": self.external_url,
             "domain": self.domain
-        })
+        }
+        if self.title_statistics:
+            _dict["title_statistics"] = self.title_statistics.to_dict()
+
+        if self.text_statistics:
+            _dict["text_statistics"] = self.text_statistics.to_dict()
         return _dict
 
 
@@ -189,8 +203,8 @@ def process_subreddit(subreddit):
             continue
         posts = process_category(data[category])
         result[category] = posts
-    pprint(result)
+    return result
 
 if __name__ == "__main__":
-    process_subreddit("python")
-
+    result = process_subreddit("python")
+    pprint(result)
