@@ -2,6 +2,7 @@ from pprint import pprint
 import nltk
 from nltk import Text, word_tokenize, pos_tag
 import redis
+from collections import Counter
 
 subreddit_info_keys = ['name', 'url']
 subreddit_category_keys = ['top_week', 'hot', 'top_day', 'top_year', 'top_month']
@@ -59,6 +60,11 @@ def get_sub_reddit_data(subreddit):
 
 def extract_text(text):
     tokens = word_tokenize(text)
+
+    non_skipped_tokens = [i for i in tokens if not i in stopwords and len(i) > 2]
+    counter = Counter(non_skipped_tokens)
+    pprint(counter.most_common(10))
+
     tagged = pos_tag(tokens)
     print(tagged)
     nouns = findtags('NN', tagged)
@@ -67,6 +73,7 @@ def extract_text(text):
     verbs = findtags('V', tagged)
     pprint(verbs)
     ntlk_text = Text(tokens)
+    print(text)
 
 def process_comment(comment):
     body = comment["body"]
@@ -82,8 +89,12 @@ def process_post(post):
 
     if text:
         extract_text(text)
+    else:
+        print("no text ", url)
     comment_score_sum = sum([i["score"] for i in comments])
-
+    print("score", score)
+    print("comment_score_sum", comment_score_sum)
+    print("\n\n")
     for comment in comments:
         process_comment(comment)
     # pprint(post)
