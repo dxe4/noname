@@ -4,6 +4,7 @@ from nltk import Text, word_tokenize, pos_tag
 import redis
 from collections import Counter
 from urlparse import urlparse
+from collections import defaultdict
 
 subreddit_info_keys = ['name', 'url']
 subreddit_category_keys = ['top_week', 'hot', 'top_day', 'top_year', 'top_month']
@@ -64,7 +65,7 @@ class ExtractMixIn(object):
     def extract_text(self, text):
         tokens = word_tokenize(text)
         # Do we need to keep stopwords & len<2? not sure
-        tokens = [i for i in tokens if not i in stopwords and len(i) > 2]
+        tokens = [i.lower() for i in tokens if not i.lower() in stopwords and len(i) > 3]
         counter = Counter(tokens)
         most_common = [i for i in counter.most_common(50) if i[1] > 1]
 
@@ -197,14 +198,62 @@ def process_category(category):
 def process_subreddit(subreddit):
     data = get_sub_reddit_data(subreddit)
     name, url = data["name"], data["url"]
-    result = {}
+    result = []
     for category in subreddit_category_keys:
         if category == "hot":  # skip hot for now because its unique
             continue
         posts = process_category(data[category])
-        result[category] = posts
+        for i in posts:
+            result.append(i)
+    result = sorted(result, key=lambda x: -x["score"])
     return result
+
+
+def process_statistics(statistics, result, type):
+    try:
+        title_s = result[type]
+        for word in title_s["most_common"]:
+            statistics["most_common"][word[0]] += word[1]
+        for k,v in title_s["verbs"].items():
+            for word in v:
+                statistics["verbs"][word] += 1
+        for k,v in title_s["nouns"][0].items():
+            for word in v:
+                statistics["nouns"][word] += 1
+    except KeyError:
+        if type == "title_statistics":
+            statistics["other"][result["external_url"]] +=1
+    return statistics
 
 if __name__ == "__main__":
     result = process_subreddit("python")
-    pprint(result)
+    # pprint(result)
+    print(len(result))
+
+    def statistics_obj():
+        return {
+            "most_common": defaultdict(int),
+            "verbs": defaultdict(int),
+            "nouns": defaultdict(int),
+            "other": defaultdict(int),
+        }
+    title_statistics = statistics_obj()
+    text_statistics = statistics_obj()
+    comments_statistics = statistics_obj()
+
+    all_statistics = [text_statistics, title_statistics, comments_statistics]
+
+    for i in result:
+        text_statistics = process_statistics(text_statistics, i, "text_statistics ")
+        title_statistics = process_statistics(title_statistics, i, "title_statistics")
+
+        # text_statistics = _text_statistics(text_statistics, i)
+        # title_statistics = _title_statistics(title_statistics, i)
+        for comment in i["comments"]:
+            comments_statistics = process_statistics(comments_statistics, comment, "details")
+
+    for statistics in all_statistics:
+        for k,v in statistics.items():
+            print(k)
+            pprint({a:b for a,b in v.items() if b > 2})
+
