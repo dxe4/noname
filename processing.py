@@ -57,6 +57,7 @@ def get_stopwords():
 
 stopwords = get_stopwords()
 
+
 class ExtractMixIn(object):
     def __init__(self, *args, **kwargs):
         self.most_common_repeated = None
@@ -80,20 +81,24 @@ class ExtractMixIn(object):
         verbs = findtags('V', tagged)
         # self.ntlk_text = Text(tokens)
 
-        return most_common_repeated, nouns, verbs
+        return most_common_repeated, nouns, verbs, counter
+
 
 class Details(object):
-    def __init__(self,  most_common_repeated, nouns, verbs ):
+    def __init__(self, most_common_repeated, nouns, verbs, counter):
         self.most_common_repeated = most_common_repeated
-        self.nouns=nouns,
+        self.nouns = nouns,
         self.verbs = verbs
+        self.counter = counter
 
     def to_dict(self):
         return {
             "most_common_repeated": self.most_common_repeated,
             "nouns": self.nouns,
-            "verbs": self.verbs
+            "verbs": self.verbs,
+            "counter": self.counter,
         }
+
 
 class Comment(ExtractMixIn):
     def __init__(self, *args, **kwargs):
@@ -105,8 +110,7 @@ class Comment(ExtractMixIn):
         if self.body.count("        ") >= 2:
             raise HasCodeException
         if self.body:
-            most_common_repeated, nouns, verbs  = super(Comment, self).extract_text(self.body)
-            self.details = Details(most_common_repeated, nouns, verbs)
+            self.details = Details(*super(Comment, self).extract_text(self.body))
 
     def to_dict(self):
         return {
@@ -134,7 +138,7 @@ class Post(ExtractMixIn):
             self.text_statistics = None
         else:
             self.title_statistics = Details(*self.extract_text(self.title))
-            self.text_statistics  = Details(*self.extract_text(self.text))
+            self.text_statistics = Details(*self.extract_text(self.text))
 
     def process(self):
         if self.text:
@@ -181,7 +185,7 @@ def get_sub_reddit_data(subreddit):
     redis_c = redis.StrictRedis(host='localhost', port=6379, db=0)
     s_reddit = redis_c.get(subreddit)
     # print("EVIL "*1000) EVIL EVIL EVIL EVIL
-    #  data is stored incorrectly no time to deal with it on a hackathon tho
+    # data is stored incorrectly no time to deal with it on a hackathon tho
     return eval(s_reddit)
 
 
@@ -200,6 +204,7 @@ def process_category(category):
     result = [i.to_dict() for i in posts]
     return result
 
+
 def process_subreddit(subreddit):
     data = get_sub_reddit_data(subreddit)
     name, url = data["name"], data["url"]
@@ -214,21 +219,27 @@ def process_subreddit(subreddit):
     return result
 
 
-def process_statistics(statistics, result, type):
+def process_statistics(statistics, all_words, result, type):
     try:
         title_s = result[type]
         for word in title_s["most_common_repeated"]:
             statistics["most_common_repeated"][word[0]] += word[1]
-        for k,v in title_s["verbs"].items():
+        for k, v in title_s["verbs"].items():
             for word in v:
                 statistics["verbs"][word] += 1
-        for k,v in title_s["nouns"][0].items():
+        for k, v in title_s["nouns"][0].items():
             for word in v:
                 statistics["nouns"][word] += 1
     except KeyError as e:
         if type == "text_statistics":
-            statistics["other"][result["external_url"]] +=1
-    return statistics
+            statistics["other"][result["external_url"]] += 1
+    try:
+        for k, v in result[type]["counter"].items():
+            all_words["all"][k] += v
+    except KeyError:
+        pass # EVIL v10
+    return statistics, all_words
+
 
 if __name__ == "__main__":
     result = process_subreddit("python")
@@ -241,27 +252,31 @@ if __name__ == "__main__":
             "verbs": defaultdict(int),
             "nouns": defaultdict(int),
             "other": defaultdict(int),
+            "all": defaultdict(int),
         }
+
     title_statistics = statistics_obj()
     text_statistics = statistics_obj()
     comments_statistics = statistics_obj()
+    all_words = statistics_obj()
 
-    all_statistics = [text_statistics, title_statistics, comments_statistics]
+    all_statistics = [text_statistics, title_statistics, comments_statistics, all_words]
 
     for i in result:
-        text_statistics = process_statistics(text_statistics, i, "text_statistics")
-        title_statistics = process_statistics(title_statistics, i, "title_statistics")
+        text_statistics, all_words = process_statistics(text_statistics, all_words, i, "text_statistics")
+        title_statistics, all_words = process_statistics(title_statistics, all_words, i, "title_statistics")
 
         for comment in i["comments"]:
-            comments_statistics = process_statistics(comments_statistics, comment, "details")
+            comments_statistics, all_words = process_statistics(comments_statistics, all_words, comment, "details")
 
     foo = {
         0: 2,
         1: 2,
         2: 12,
+        3: 20,
     }
-    for count,statistics in enumerate(all_statistics):
+    for count, statistics in enumerate(all_statistics):
         print(count)
-        for k,v in statistics.items():
+        for k, v in statistics.items():
             print(k)
-            pprint({a:b for a,b in v.items() if b > foo[count]})
+            pprint({a: b for a, b in v.items() if b > foo[count]})
