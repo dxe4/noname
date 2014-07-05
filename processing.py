@@ -58,7 +58,7 @@ stopwords = get_stopwords()
 
 class ExtractMixIn(object):
     def __init__(self, *args, **kwargs):
-        self.most_common = None
+        self.most_common_repeated = None
         self.nouns = None
         self.verbs = None
 
@@ -67,7 +67,7 @@ class ExtractMixIn(object):
         # Do we need to keep stopwords & len<2? not sure
         tokens = [i.lower() for i in tokens if not i.lower() in stopwords and len(i) > 3]
         counter = Counter(tokens)
-        most_common = [i for i in counter.most_common(50) if i[1] > 1]
+        most_common_repeated = [i for i in counter.most_common(50) if i[1] > 1]
 
         tagged = pos_tag(tokens)
         nouns = findtags('NN', tagged)
@@ -75,17 +75,17 @@ class ExtractMixIn(object):
         verbs = findtags('V', tagged)
         # self.ntlk_text = Text(tokens)
 
-        return most_common, nouns, verbs
+        return most_common_repeated, nouns, verbs
 
 class Details(object):
-    def __init__(self,  most_common, nouns, verbs ):
-        self.most_common = most_common
+    def __init__(self,  most_common_repeated, nouns, verbs ):
+        self.most_common_repeated = most_common_repeated
         self.nouns=nouns,
         self.verbs = verbs
 
     def to_dict(self):
         return {
-            "most_common": self.most_common,
+            "most_common_repeated": self.most_common_repeated,
             "nouns": self.nouns,
             "verbs": self.verbs
         }
@@ -100,8 +100,8 @@ class Comment(ExtractMixIn):
         if self.body.count("        ") >= 2:
             raise HasCodeException
         if self.body:
-            most_common, nouns, verbs  = super(Comment, self).extract_text(self.body)
-            self.details = Details(most_common, nouns, verbs)
+            most_common_repeated, nouns, verbs  = super(Comment, self).extract_text(self.body)
+            self.details = Details(most_common_repeated, nouns, verbs)
 
     def to_dict(self):
         return {
@@ -212,8 +212,8 @@ def process_subreddit(subreddit):
 def process_statistics(statistics, result, type):
     try:
         title_s = result[type]
-        for word in title_s["most_common"]:
-            statistics["most_common"][word[0]] += word[1]
+        for word in title_s["most_common_repeated"]:
+            statistics["most_common_repeated"][word[0]] += word[1]
         for k,v in title_s["verbs"].items():
             for word in v:
                 statistics["verbs"][word] += 1
@@ -232,7 +232,7 @@ if __name__ == "__main__":
 
     def statistics_obj():
         return {
-            "most_common": defaultdict(int),
+            "most_common_repeated": defaultdict(int),
             "verbs": defaultdict(int),
             "nouns": defaultdict(int),
             "other": defaultdict(int),
