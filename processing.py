@@ -242,7 +242,7 @@ def process_statistics(statistics, all_words, result, type):
 
 
 if __name__ == "__main__":
-    result = process_subreddit("python")
+    result = process_subreddit("clojure")
     # pprint(result)
     print(len(result))
 

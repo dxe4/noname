@@ -4,7 +4,10 @@ from pprint import pprint
 from collections import defaultdict
 import time
 
-subreddits_programming = {"python", "linux", "clojure", "haskell", "git", "programming", "opensource"}
+# subreddits_programming = {"python", "linux", "clojure", "haskell", "git", "programming", "opensource"}
+
+subreddits_programming = {"java", "javascript", "nodejs", "php", "linux", "mac", "iphone", "android", "google", "microsoft"}
+
 
 info = {
     "hot": "get_hot",
