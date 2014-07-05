@@ -52,6 +52,12 @@ def get_stopwords():
 stopwords = get_stopwords()
 
 class ExtractMixIn(object):
+
+    def __init__(self, *args, **kwargs):
+        self.most_common = None
+        self.nouns = None
+        self.verbs = None
+
     def extract_text(self, text):
         # print(text)
         tokens = word_tokenize(text)
@@ -59,20 +65,24 @@ class ExtractMixIn(object):
         # Do we need to keep stopwords & len<2? not sure
         tokens = [i for i in tokens if not i in stopwords and len(i) > 2]
         counter = Counter(tokens)
-        pprint(counter.most_common(10))
+        self.most_common = [i for i in counter.most_common(10) if i[1] > 1]
 
         tagged = pos_tag(tokens)
-        # print(tagged)
-        nouns = findtags('NN', tagged)
-        pprint(nouns)
+        self.nouns = findtags('NN', tagged)
 
-        verbs = findtags('V', tagged)
-        pprint(verbs)
-        ntlk_text = Text(tokens)
+        self.verbs = findtags('V', tagged)
+        self.ntlk_text = Text(tokens)
 
+    def to_dict(self):
+        return {
+            "common": self.most_common,
+            "nouns": self.nouns,
+            "verbs": self.verbs,
+        }
 
 class Comment(ExtractMixIn):
     def __init__(self, *args, **kwargs):
+        super(Comment, self).__init__(*args, **kwargs)
         self.body = kwargs["body"]
         self.score = kwargs["score"]
 
@@ -82,8 +92,18 @@ class Comment(ExtractMixIn):
         if self.body:
             super(Comment, self).extract_text(self.body)
 
+    def to_dict(self):
+        _dict = super(Comment, self).to_dict()
+        _dict.update({
+            "body": self.body,
+            "score": self.score,
+        })
+        return _dict
+
+
 class Post(ExtractMixIn):
     def __init__(self, *args, **kwargs):
+        super(Post, self).__init__(*args, **kwargs)
         self.comments = [Comment(**i) for i in kwargs["comments"]]
         self.score = kwargs["score"]
         self.text = kwargs["text"]
@@ -98,6 +118,28 @@ class Post(ExtractMixIn):
         else:
             self.url_only = True
 
+        comments = []
+        for comment in self.comments:
+            try:
+                comment.process()
+                comments.append(comment)
+            except HasCodeException:
+                pass  # Comment has code therefore adds noise in the statistics
+        # Remove comments that failed to be processed
+        self.comments = comments
+
+    def to_dict(self):
+        _dict = super(Post, self).to_dict()
+        _dict.update({
+            "score": self.score,
+            "text": self.text,
+            "title": self.title,
+            "url": self.url,
+            "url_only": self.url_only,
+            "comment_score_sum": self.comment_score_sum,
+            "comments": [i.to_dict() for i in self.comments],
+        })
+        return _dict
 
 def get_sub_reddit_data(subreddit):
 
@@ -113,25 +155,18 @@ def get_sub_reddit_data(subreddit):
     return eval(s_reddit)
 
 
-def process_post(post):
-    post.process()
-
-    comments = []
-    for comment in post.comments:
-        try:
-            comment.process()
-            comments.append(comment)
-        except HasCodeException:
-            pass  # Comment has code therefore adds noise in the statistics
-    # Remove comments that failed to be processed
-    post.comments = comments
-
 def process_category(category):
     """
     :param category: one of this ['top_week', 'hot', 'top_day', 'top_year', 'top_month']
     """
+    posts = []
     for post in category:
-        process_post(Post(**post))
+        post = Post(**post)
+        post.process()
+        posts.append(post)
+
+    for i in posts:
+        pprint(i.to_dict())
 
 def process_subreddit(subreddit):
     data = get_sub_reddit_data(subreddit)
