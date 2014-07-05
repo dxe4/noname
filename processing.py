@@ -142,13 +142,14 @@ class Post(ExtractMixIn):
         self.url_only = False
         self.external_url = None
         self.domain = urlparse(self.url).netloc
+        self.title_statistics = None
+        self.text_statistics = None
         if self.domain != "www.reddit.com":
             self.external_url = self.domain
-            self.title_statistics = None
-            self.text_statistics = None
-        else:
-            self.title_statistics = Details(*self.extract_text(self.title))
+        if self.text:
             self.text_statistics = Details(*self.extract_text(self.text))
+        if self.title:
+            self.title_statistics = Details(*self.extract_text(self.title))
 
     def process(self):
         if self.text:
@@ -176,7 +177,7 @@ class Post(ExtractMixIn):
             "comment_score_sum": self.comment_score_sum,
             "comments": [i.to_dict() for i in self.comments],
             "external_url": self.external_url,
-            "domain": self.domain
+            "domain": self.domain,
         }
         if self.title_statistics:
             _dict["title_statistics"] = self.title_statistics.to_dict()
@@ -302,6 +303,7 @@ def spam_eggs_bad_name(sub_reddit):
     for count, statistics in enumerate(all_statistics):
         for k, v in statistics.items():
             # https/http must have been captured from urls?
+            print(k)
             pprint({a: b for a, b in v.items() if b > min_count[count]
                     if not a in ("http", "https")})
 
