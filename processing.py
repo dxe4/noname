@@ -10,6 +10,9 @@ import re
 subreddit_info_keys = ['name', 'url']
 subreddit_category_keys = ['top_week', 'hot', 'top_day', 'top_year', 'top_month']
 
+subreddits_programming = ["java", "javascript", "nodejs", "php", "linux", "mac", "iphone", "android", "google",
+                          "microsoft", "python", "linux", "clojure", "haskell", "git", "programming", "opensource"]
+
 
 class HasCodeException(Exception):
     """
@@ -246,12 +249,19 @@ def process_statistics(statistics, all_words, result, type):
         for k, v in result[type]["counter"].items():
             all_words["all"][k] += v
     except KeyError:
-        pass # EVIL v10
+        pass  # EVIL v10
     return statistics, all_words
 
 
-if __name__ == "__main__":
-    result = process_subreddit("google")
+def safe_del_key(_dict, key):
+    try:
+        del _dict[key]
+    except KeyError:
+        pass
+
+
+def spam_eggs_bad_name(sub_reddit):
+    result = process_subreddit(sub_reddit)
     # pprint(result)
     print(len(result))
 
@@ -286,6 +296,14 @@ if __name__ == "__main__":
     }
     for count, statistics in enumerate(all_statistics):
         print(count)
+
         for k, v in statistics.items():
             print(k)
-            pprint({a: b for a, b in v.items() if b > foo[count]})
+            # https/http must have been captured from urls?
+            pprint({a: b for a, b in v.items() if b > foo[count]
+                    if not a in ("http", "https")})
+
+
+if __name__ == "__main__":
+    for i in subreddits_programming:
+        spam_eggs_bad_name(i)
