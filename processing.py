@@ -220,8 +220,8 @@ def process_statistics(statistics, result, type):
         for k,v in title_s["nouns"][0].items():
             for word in v:
                 statistics["nouns"][word] += 1
-    except KeyError:
-        if type == "title_statistics":
+    except KeyError as e:
+        if type == "text_statistics":
             statistics["other"][result["external_url"]] +=1
     return statistics
 
@@ -244,11 +244,9 @@ if __name__ == "__main__":
     all_statistics = [text_statistics, title_statistics, comments_statistics]
 
     for i in result:
-        text_statistics = process_statistics(text_statistics, i, "text_statistics ")
+        text_statistics = process_statistics(text_statistics, i, "text_statistics")
         title_statistics = process_statistics(title_statistics, i, "title_statistics")
 
-        # text_statistics = _text_statistics(text_statistics, i)
-        # title_statistics = _title_statistics(title_statistics, i)
         for comment in i["comments"]:
             comments_statistics = process_statistics(comments_statistics, comment, "details")
 
