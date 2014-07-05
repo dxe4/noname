@@ -30,18 +30,24 @@ def get_sub_reddit_data(subreddit):
 def process_comment(comment):
     body = comment["body"]
     score = comment["score"]
-    pprint(comment)
+    # pprint(comment)
 
 def process_post(post):
     comments = post["comments"]
     score = post["score"]
-    score = post["text"]
-    score = post["title"]
+    text = post["text"]
+    title = post["title"]
     url = post["url"]
+
+    if text:
+        tokens = word_tokenize(text)
+        ntlk_text = Text(tokens)
+
+    comment_score_sum = sum([i["score"] for i in comments])
 
     for comment in comments:
         process_comment(comment)
-    pprint(post)
+    # pprint(post)
 
 def process_category(category):
     """
