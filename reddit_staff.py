@@ -15,22 +15,32 @@ info = {
 }
 
 def comment_info(comment):
-    return {
-        "body": comment.body,
-        "score": comment.score,
-    }
+    try:
+        return {
+            "body": comment.body,
+            "score": comment.score,
+        }
+    except AttributeError:  # EVIL
+        return {
+            "body": None,
+            "score": None
+        }
 
 def submission_info(submission):
     print("fetching submission {}".format(submission.title))
 
     time.sleep(0.5)  # Respect reddit for being awesome
-    return  {
-        "score": submission.score,
-        "url": submission.url,
-        "title": submission.title,
-        "text": submission.selftext,
-        "comments": [comment_info(i) for i in submission.comments],
-    }
+    try:
+        result = {
+            "score": submission.score,
+            "url": submission.url,
+            "title": submission.title,
+            "text": submission.selftext,
+        }
+        result["comments"] = [comment_info(i) for i in submission.comments]
+        return result
+    except AttributeError:  # EVIL v2
+        return None
 
 
 def fetch_info(s_reddit, func, limit):
