@@ -3,6 +3,7 @@ import nltk
 from nltk import Text, word_tokenize, pos_tag
 import redis
 from collections import Counter
+from urlparse import urlparse
 
 subreddit_info_keys = ['name', 'url']
 subreddit_category_keys = ['top_week', 'hot', 'top_day', 'top_year', 'top_month']
@@ -53,7 +54,6 @@ def get_stopwords():
 
 
 stopwords = get_stopwords()
-
 
 class ExtractMixIn(object):
     def __init__(self, *args, **kwargs):
@@ -115,6 +115,9 @@ class Post(ExtractMixIn):
         self.url = kwargs["url"]
         self.comment_score_sum = sum([i.score for i in self.comments])
         self.url_only = False
+        self.external_url = None
+        if self.url:
+            self.domain = urlparse(self.url).netloc
 
     def process(self):
         if self.text:
@@ -142,6 +145,8 @@ class Post(ExtractMixIn):
             "url_only": self.url_only,
             "comment_score_sum": self.comment_score_sum,
             "comments": [i.to_dict() for i in self.comments],
+            "external_url": self.external_url,
+            "domain": self.domain
         })
         return _dict
 
@@ -169,7 +174,7 @@ def process_category(category):
         post.process()
         posts.append(post)
 
-    sorted(posts, key=lambda x: x.score)
+    posts = sorted(posts, key=lambda x: -x.score)
 
     for i in posts:
         pprint(i.to_dict())
@@ -181,6 +186,6 @@ def process_subreddit(subreddit):
     for category in subreddit_category_keys:
         process_category(data[category])
 
-
-process_subreddit("python")
+if __name__ == "__main__":
+    process_subreddit("python")
 
