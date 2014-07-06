@@ -6,12 +6,13 @@ this file will process what processing.py pushed in redis
 
 import redis
 from pprint import pprint
+import pygal
 
 subreddits_programming = ["java", "javascript", "nodejs", "php", "linux", "mac", "iphone", "android", "google",
                           "microsoft", "python", "linux", "clojure", "haskell", "git", "programming", "opensource"]
 
 
-redis_c = redis.StrictRedis(host='localhost', port=6379, db=1)
+redis_c = redis.StrictRedis(host='localhost', port=6379, db=2)
 
 def get_sub_reddit_data(redis_c, subreddit):
     """
@@ -24,5 +25,16 @@ def get_sub_reddit_data(redis_c, subreddit):
     # data is stored incorrectly no time to deal with it on a hackathon tho
     return eval(s_reddit)
 
-x = get_sub_reddit_data(redis_c, "java")
-pprint(x)
+def make_svg(subreddit):
+    xx = get_sub_reddit_data(redis_c, subreddit)
+
+    data = sorted([(k,v) for k,v in xx["most_popular"].items()], key=lambda x: -x[1])[1:20]
+
+
+    chart = pygal.HorizontalBar()
+    for k,v in data:
+        chart .add(k, v)
+    chart.render_to_file('{}.svg'.format(subreddit))
+
+for i in subreddits_programming:
+    make_svg(i)
