@@ -61,6 +61,18 @@ def get_stopwords():
 stopwords = get_stopwords()
 
 
+class NeighboorsMixIn(object):
+    def find_neighboors(self, word):
+        neighbours = []
+        for count, token in enumerate(self.tokens):
+            if word == token:
+                try:
+                    neighbours.append((self.tokens[count - 1], self.tokens[count + 1]))
+                except IndexError:
+                    pass
+        return neighbours
+
+
 class ExtractMixIn(object):
     def __init__(self, *args, **kwargs):
         self.most_common_repeated = None
@@ -75,6 +87,7 @@ class ExtractMixIn(object):
         tokens = word_tokenize(text)
         # Do we need to keep stopwords & len<2? not sure
         tokens = [i.lower() for i in tokens if not i.lower() in stopwords and len(i) > 3]
+        self.tokens = tokens  # kind of a hack
         counter = Counter(tokens)
         most_common_repeated = [i for i in counter.most_common(50) if i[1] > 1]
 
@@ -103,7 +116,7 @@ class Details(object):
         }
 
 
-class Comment(ExtractMixIn):
+class Comment(ExtractMixIn, NeighboorsMixIn):
     def __init__(self, *args, **kwargs):
         super(Comment, self).__init__(*args, **kwargs)
         self.body = kwargs["body"]
@@ -130,7 +143,7 @@ class Comment(ExtractMixIn):
             }
 
 
-class Post(ExtractMixIn):
+class Post(ExtractMixIn, NeighboorsMixIn):
     def __init__(self, *args, **kwargs):
         super(Post, self).__init__(*args, **kwargs)
         self.comments = [Comment(**i) for i in kwargs["comments"]]
