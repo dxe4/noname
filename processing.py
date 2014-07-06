@@ -61,16 +61,15 @@ def get_stopwords():
 stopwords = get_stopwords()
 
 
-class NeighboorsMixIn(object):
-    def find_neighboors(self, word):
-        neighbours = []
-        for count, token in enumerate(self.tokens):
-            if word == token:
-                try:
-                    neighbours.append((self.tokens[count - 1], self.tokens[count + 1]))
-                except IndexError:
-                    pass
-        return neighbours
+def find_neighboors(tokens, word):
+    neighbours = []
+    for count, token in enumerate(tokens):
+        if word == token:
+            try:
+                neighbours.append((tokens[count - 1], tokens[count + 1]))
+            except IndexError:
+                pass
+    return neighbours
 
 
 class ExtractMixIn(object):
@@ -116,7 +115,7 @@ class Details(object):
         }
 
 
-class Comment(ExtractMixIn, NeighboorsMixIn):
+class Comment(ExtractMixIn):
     def __init__(self, *args, **kwargs):
         super(Comment, self).__init__(*args, **kwargs)
         self.body = kwargs["body"]
@@ -133,7 +132,8 @@ class Comment(ExtractMixIn, NeighboorsMixIn):
             return {
                 "body": self.body,
                 "score": self.score,
-                "details": self.details.to_dict()
+                "details": self.details.to_dict(),
+                "tokens": self.tokens,
             }
         except AttributeError:
             return {
@@ -143,7 +143,7 @@ class Comment(ExtractMixIn, NeighboorsMixIn):
             }
 
 
-class Post(ExtractMixIn, NeighboorsMixIn):
+class Post(ExtractMixIn):
     def __init__(self, *args, **kwargs):
         super(Post, self).__init__(*args, **kwargs)
         self.comments = [Comment(**i) for i in kwargs["comments"]]
@@ -191,6 +191,7 @@ class Post(ExtractMixIn, NeighboorsMixIn):
             "comments": [i.to_dict() for i in self.comments],
             "external_url": self.external_url,
             "domain": self.domain,
+            "tokens": self.tokens,
         }
         if self.title_statistics:
             _dict["title_statistics"] = self.title_statistics.to_dict()
@@ -313,12 +314,24 @@ def spam_eggs_bad_name(sub_reddit):
             comments_statistics, all_words = process_statistics(
                 comments_statistics, all_words, comment, "details")
 
+
+    neighbours = defaultdict(list)
     for count, statistics in enumerate(all_statistics):
         for k, v in statistics.items():
             # https/http must have been captured from urls?
             print(k)
-            pprint({a: b for a, b in v.items() if b > min_count[count]
-                    if not a in ("http", "https")})
+            final_result = {a: b for a, b in v.items() if b > min_count[count]
+                    if not a in ("http", "https")}
+
+            if count == 3:
+                for word in final_result :
+                    for i in result:
+                        neighbours_found = find_neighboors(i["tokens"], word)
+                        neighbours[word].extend(neighbours_found)
+                        for j in i["comments"]:
+                            neighbours_found = find_neighboors(i["tokens"], word)
+                            neighbours[word].extend(neighbours_found)
+    pprint(neighbours)
 
 
 if __name__ == "__main__":
