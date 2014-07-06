@@ -28,5 +28,5 @@ def search(section, word):
     print(word)
     return {"data": get_sub_reddit_data(section)["neighbours"][word]}
 
-
-run(host='localhost', port=8080, debug=True)
+if __name__ == "__main__":
+    run(host='localhost', port=8080, debug=True)
