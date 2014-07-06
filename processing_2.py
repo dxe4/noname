@@ -39,5 +39,6 @@ def make_svg(subreddit):
         chart .add(k, v)
     chart.render_to_file('{}.svg'.format(subreddit))
 
-for i in subreddits_programming:
-    make_svg(i)
+if __name__ == "__main__":
+    for i in subreddits_programming:
+        make_svg(i)
