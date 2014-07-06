@@ -13,6 +13,9 @@ subreddit_category_keys = ['top_week', 'hot', 'top_day', 'top_year', 'top_month'
 subreddits_programming = ["java", "javascript", "nodejs", "php", "linux", "mac", "iphone", "android", "google",
                           "microsoft", "python", "linux", "clojure", "haskell", "git", "programming", "opensource"]
 
+# save the processed data in another db (1)
+redis_c = redis.StrictRedis(host='localhost', port=6379, db=1)
+
 
 class HasCodeException(Exception):
     """
@@ -316,6 +319,7 @@ def spam_eggs_bad_name(sub_reddit):
 
 
     neighbours = defaultdict(list)
+    to_save = {}
     for count, statistics in enumerate(all_statistics):
         for k, v in statistics.items():
             # https/http must have been captured from urls?
@@ -323,9 +327,8 @@ def spam_eggs_bad_name(sub_reddit):
             final_result = {a: b for a, b in v.items() if b > min_count[count]
                     if not a in ("http", "https")}
 
-            pprint(final_result)
-
             if count == 3:
+                to_save = final_result
                 for word in final_result :
                     for i in result:
                         neighbours_found = find_neighboors(i["tokens"], word)
@@ -336,7 +339,12 @@ def spam_eggs_bad_name(sub_reddit):
                                 neighbours[word].extend(neighbours_found)
                             except KeyError:
                                 pass
-    pprint(neighbours)
+
+    redis_c.set(sub_reddit, {
+        "most_popular": to_save,
+        "neighbours": dict(neighbours),
+    })
+
 
 if __name__ == "__main__":
     for i in subreddits_programming:
