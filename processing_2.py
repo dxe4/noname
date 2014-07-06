@@ -95,7 +95,7 @@ def make_common_svg():
 
 
     stackedbar_chart = pygal.StackedBar(width=1200, height=800,
-                                explicit_size=True, legend_font_size=18,
+                                explicit_size=True, legend_font_size=24,
                                 tooltip_font_size=24, title="Common",
                                 title_font_size=24, spacing=20)
     stackedbar_chart.title = 'Common words !'
@@ -110,4 +110,6 @@ def make_common_svg():
 if __name__ == "__main__":
     # for i in subreddits_programming:
         #make_svg(i)
-    make_common_svg()
+    # make_common_svg()
+    x = get_sub_reddit_data(redis_c, "python")
+    pprint(x)
