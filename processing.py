@@ -1,3 +1,6 @@
+"""
+tHIS CODE IS FULL OF BAD PRACTICES DON'T GET INSPIRED BY IT...
+"""
 from pprint import pprint
 import nltk
 from nltk import Text, word_tokenize, pos_tag
