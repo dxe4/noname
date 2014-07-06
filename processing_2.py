@@ -31,7 +31,9 @@ def make_svg(subreddit):
     data = sorted([(k,v) for k,v in xx["most_popular"].items()], key=lambda x: -x[1])[1:20]
 
 
-    chart = pygal.HorizontalBar()
+    chart = pygal.HorizontalBar(rounded_bars=20, width=1000, height=800,
+                                explicit_size=True, legend_font_size=20,
+                                tooltip_font_size=24)
     for k,v in data:
         chart .add(k, v)
     chart.render_to_file('{}.svg'.format(subreddit))
