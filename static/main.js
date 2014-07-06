@@ -12,10 +12,19 @@ $(document).ready(function(){
 
         $.get( "/search/"+section+"/"+word, function( data ) {
           //$( ".result" ).html( data );
-            $("#search_result");
-            console.log(data);
+            var _list = $("#search_result");
+            _list.empty();
+            $.each(data["data"], function(i) {
+                var li = $('<li/>')
+                    .addClass('list-group-item')
+                    .css('font-size', '250%')
+                    .text(data["data"][i])
+                    .appendTo(_list);
+            });
         });
-
-
     });
+      $( "#btn_clear" ).on( "click", function() {
+          $("#search_result").empty();
+      });
+
 });
