@@ -9,6 +9,7 @@ from collections import Counter
 from urlparse import urlparse
 from collections import defaultdict
 import re
+from copy import copy
 
 subreddit_info_keys = ['name', 'url']
 subreddit_category_keys = ['top_week', 'hot', 'top_day', 'top_year', 'top_month']
@@ -16,8 +17,8 @@ subreddit_category_keys = ['top_week', 'hot', 'top_day', 'top_year', 'top_month'
 subreddits_programming = ["java", "javascript", "nodejs", "php", "linux", "mac", "iphone", "android", "google",
                           "microsoft", "python", "linux", "clojure", "haskell", "git", "programming", "opensource"]
 
-# save the processed data in another db (1)
-redis_c = redis.StrictRedis(host='localhost', port=6379, db=1)
+# save the processed data in another db (2)
+redis_c = redis.StrictRedis(host='localhost', port=6379, db=2)
 
 
 class HasCodeException(Exception):
@@ -309,6 +310,9 @@ def spam_eggs_bad_name(sub_reddit):
     all_statistics = statistics_objects()
     title_statistics, text_statistics, comments_statistics, all_words = all_statistics
 
+    to_save = {}
+    neighbours = defaultdict(list)
+
     for i in result:
         text_statistics, all_words = process_statistics(
             text_statistics, all_words, i, "text_statistics")
@@ -321,17 +325,18 @@ def spam_eggs_bad_name(sub_reddit):
                 comments_statistics, all_words, comment, "details")
 
 
-    neighbours = defaultdict(list)
-    to_save = {}
+
     for count, statistics in enumerate(all_statistics):
         for k, v in statistics.items():
             # https/http must have been captured from urls?
-            print(k)
+            print(k, count)
             final_result = {a: b for a, b in v.items() if b > min_count[count]
                     if not a in ("http", "https")}
 
             if count == 3:
-                to_save = final_result
+                if final_result:
+                    to_save = final_result
+
                 for word in final_result :
                     for i in result:
                         neighbours_found = find_neighboors(i["tokens"], word)
