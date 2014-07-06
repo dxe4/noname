@@ -299,7 +299,7 @@ min_count = {
 
 def spam_eggs_bad_name(sub_reddit):
     result = process_subreddit(sub_reddit)
-
+    # pprint(result)
     all_statistics = statistics_objects()
     title_statistics, text_statistics, comments_statistics, all_words = all_statistics
 
@@ -323,16 +323,20 @@ def spam_eggs_bad_name(sub_reddit):
             final_result = {a: b for a, b in v.items() if b > min_count[count]
                     if not a in ("http", "https")}
 
+            pprint(final_result)
+
             if count == 3:
                 for word in final_result :
                     for i in result:
                         neighbours_found = find_neighboors(i["tokens"], word)
                         neighbours[word].extend(neighbours_found)
                         for j in i["comments"]:
-                            neighbours_found = find_neighboors(i["tokens"], word)
-                            neighbours[word].extend(neighbours_found)
+                            try:
+                                neighbours_found = find_neighboors(j["tokens"], word)
+                                neighbours[word].extend(neighbours_found)
+                            except KeyError:
+                                pass
     pprint(neighbours)
-
 
 if __name__ == "__main__":
     for i in subreddits_programming:
