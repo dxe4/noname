@@ -1,5 +1,5 @@
-from pprint import pprint
 import requests
+from pprint import pprint
 
 USER_AGENT = 'noname version:1 url:https://github.com/papaloizouc/noname'
 DEAFAULT_HEADERS = {
