@@ -1,4 +1,5 @@
 import requests
+from pprint import pprint
 
 USER_AGENT = 'noname version:1 url:https://github.com/papaloizouc/noname'
 headers = {
@@ -12,7 +13,6 @@ cast_post_type = {1: 'text', 2: 'url', 3: 'url_text'}
 
 
 def _determine_type(domain, text):
-
     if domain == "self.Python":
         return "text"
     elif text:
@@ -20,17 +20,19 @@ def _determine_type(domain, text):
     else:
         return "url"
 
+
 def parse_post(post_dict):
     # Required Fields
     domain = post_dict["domain"]
     text = post_dict.get("selftext")
     post_type = _determine_type(domain, text)
+
     return {
         'score': post_dict['score'],
         'title': post_dict['title'],
         'name': post_dict['name'],
         'url': post_dict['url'],
-        'domain': domain ,
+        'domain': domain,
         'created_utc': post_dict['created_utc'],
         "type": post_type
     }
@@ -46,18 +48,14 @@ def get_subreddit():
     x = requests.get(url='http://reddit.com/r/python/top.json',
                      headers=headers,
                      params=params)
-    from pprint import pprint
 
     resp = x.json()['data']
     children, after, before = resp['children'], resp['after'], resp['before']
-    pprint(children)
-    print(after)
-    print(before)
+
     for child in children:
         data = child['data']
         post = parse_post(data)
         pprint(post)
-
 
 
 if __name__ == '__main__':
