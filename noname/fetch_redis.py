@@ -48,11 +48,23 @@ def parse_post(post_dict):
     }
 
 
-def get_subreddit():
+def parse_posts(children):
+    '''
+    :param children: Dict as given by response.json()['data']['children]
+    '''
+    return [parse_post(child['data'])
+            for child in children]
+
+
+def get_subreddit_top(t='year', sort='top', limit=100):
+    '''
+        Calls http://www.reddit.com/dev/api#GET_{sort}
+    '''
     params = {
-        't': 'year',
-        'sort': 'top',
-        'limit': 100
+        't': t,
+        'sort': sort,
+        'limit': limit,
+        'count': 60
     }
     # params['after']= 't3_1qpbwi'
     response = requests.get(url='http://reddit.com/r/python/top.json',
@@ -61,12 +73,10 @@ def get_subreddit():
 
     data = response.json()['data']
     children, after, before = data['children'], data['after'], data['before']
-    pprint(children)
-    for child in children:
-        child_data = child['data']
-        post = parse_post(child_data)
-        pprint(post)
+    posts = parse_posts(children)
+
+    return posts
 
 
 if __name__ == '__main__':
-    get_subreddit()
+    get_subreddit_top()
