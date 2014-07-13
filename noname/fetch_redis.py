@@ -1,5 +1,18 @@
 import requests
-from pprint import pprint
+from itertools import chain
+# from collections import namedtuple
+
+
+class TopOptions(object):
+    '''
+    Just for autocomplete reasons, could be a dict
+    '''
+    def __init__(self, t='year', sort='top', limit=100, after=None):
+        self.t = t
+        self.sort = sort
+        self.limit = limit
+        self.after = after
+
 
 USER_AGENT = 'noname version:1 url:https://github.com/papaloizouc/noname'
 DEAFAULT_HEADERS = {
@@ -8,8 +21,8 @@ DEAFAULT_HEADERS = {
 
 # some crazy staff
 post_types = {'text', 'url', 'url_text'}
-optional_input = {'url': 2, 'selftext': 1, 'domain': 0}
-cast_post_type = {1: 'text', 2: 'url', 3: 'url_text'}
+# optional_input = {'url': 2, 'selftext': 1, 'domain': 0}
+# cast_post_type = {1: 'text', 2: 'url', 3: 'url_text'}
 
 
 def _determine_type(domain, text):
@@ -56,27 +69,39 @@ def parse_posts(children):
             for child in children]
 
 
-def get_subreddit_top(t='year', sort='top', limit=100):
+def get_subreddit_top_recursive(top_options, depth=1):
     '''
+        :param top_options: Instance of TopOptions
+        Just to avoid the recursion logic (if statements) in get_subreddit_top
+        http://en.wikipedia.org/wiki/Separation_of_concerns
+        could be generic recerse_function(f, *args, **kwargs)
+    '''
+    if depth <= 0:
+        raise ValueError('Depth must be bigger than 0, given {}'.format(depth))
+
+    posts = []
+    for i in range(0, depth):
+        #  TODO handle next arguement
+        result = get_subreddit_top(top_options)
+        posts.append(result)
+
+    return chain(*posts)
+
+
+def get_subreddit_top(top_options):
+    '''
+        :param top_options: Instance of TopOptions
         Calls http://www.reddit.com/dev/api#GET_{sort}
     '''
-    params = {
-        't': t,
-        'sort': sort,
-        'limit': limit,
-        'count': 60
-    }
-    # params['after']= 't3_1qpbwi'
     response = requests.get(url='http://reddit.com/r/python/top.json',
                             headers=DEAFAULT_HEADERS,
-                            params=params)
+                            params=vars(top_options))
 
     data = response.json()['data']
     children, after, before = data['children'], data['after'], data['before']
     posts = parse_posts(children)
-
+    #  TODO return dict instead of list
     return posts
-
 
 if __name__ == '__main__':
     get_subreddit_top()
