@@ -11,6 +11,9 @@ DEAFAULT_HEADERS = {
 
 
 class FetchError(Exception):
+    '''
+        Raised when a subreddit could not be fetched (status_code != 200)
+    '''
     pass
 
 
@@ -79,6 +82,8 @@ def get_subreddit_top_recursive(subreddit, top_options=None, depth=1):
         Just to avoid the recursion logic (if statements) in get_subreddit_top
         http://en.wikipedia.org/wiki/Separation_of_concerns
         could be generic recerse_function(f, *args, **kwargs)
+        Raises FetchError if resonse.status_code != 200
+        Raises ValueError if depth <= 0
     '''
     if depth <= 0:
         raise ValueError('Depth must be bigger than 0, given {}'.format(depth))
@@ -89,8 +94,11 @@ def get_subreddit_top_recursive(subreddit, top_options=None, depth=1):
     posts = []
     for i in range(0, depth):
         result = get_subreddit_top(subreddit, top_options=top_options)
+
+        #  Next posts fetched will start after this posts last
         top_options = deepcopy(top_options)
         top_options.after = result['after']
+
         posts.append(result)
 
     return posts
@@ -100,6 +108,7 @@ def get_subreddit_top(subreddit, top_options=None):
     '''
         :param top_options: Instance of TopOptions
         Calls http://www.reddit.com/dev/api#GET_{sort}
+        Raises FetchError if resonse.status_code != 200
     '''
     if top_options is None:
         top_options = TopOptions()
