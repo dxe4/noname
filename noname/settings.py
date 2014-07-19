@@ -10,7 +10,9 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
-import psycopg2.extensions
+from functools import partial
+#  from psycopg2 import extensions
+
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
@@ -88,3 +90,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.6/howto/static-files/
 
 STATIC_URL = '/static/'
+
+CURRENT_DIR = os.path.realpath(os.path.dirname(__file__))
+
+partial_join = partial(os.path.join, CURRENT_DIR)
+#  MEDIA_ROOT = PROJECT_PATH + '/media/'
+TEMPLATE_DIRS = (
+    CURRENT_DIR + partial_join('/templates/')
+)

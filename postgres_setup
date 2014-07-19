@@ -2,3 +2,4 @@ sudo su - postgres
 createuser -P
 psql
 GRANT ALL PRIVILEGES ON DATABASE dev_db TO dev_user
+# run python manage.py syncdb afterwards
