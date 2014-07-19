@@ -28,7 +28,8 @@ post = {
     'num_comments': 27,
     'num_reports': None,
     'over_18': False,
-    'permalink': '/r/Python/comments/1tilfi/congratulations_rpython_you_are_the_subreddit_of/',
+    'permalink': '/r/Python/comments/1tilfi/congratulations_rpython_you_are'
+    '_the_subreddit_of/',
     'saved': False,
     'score': 793,
     'secure_media': None,
@@ -41,7 +42,8 @@ post = {
     'thumbnail': '',
     'title': 'Congratulations r/Python! You are the SUBREDDIT OF THE DAY!',
     'ups': 793,
-    'url': 'http://www.reddit.com/r/subredditoftheday/comments/1tiler/december_23rd_2013_rpython_dont_worry_it_wont/',
+    'url': 'http://www.reddit.com/r/subredditoftheday/comments/1tiler/'
+    'december_23rd_2013_rpython_dont_worry_it_wont/',
     'visited': False
 }
 
