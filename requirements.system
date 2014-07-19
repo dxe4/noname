@@ -1,0 +1,1 @@
+sudo apt-get install libpq-dev postgresql-9.1 redis-server
