@@ -1,1 +1,3 @@
+# debian (not sure if ubuntu will work, 
+# may need postgresql instead of postgresql-9.1)
 sudo apt-get install libpq-dev postgresql-9.1 redis-server

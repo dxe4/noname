@@ -10,6 +10,8 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
+import psycopg2.extensions
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
@@ -57,10 +59,16 @@ WSGI_APPLICATION = 'noname.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': os.environ.get('DB_NAME', 'dev_db'),
+        # The following settings are not used with sqlite3:
+        'USER': os.environ.get('DB_USER', 'dev_user'),
+        'PASSWORD': os.environ.get('DB_PASS', 'dev_pass'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': '',
     }
 }
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.6/topics/i18n/
