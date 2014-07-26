@@ -1,5 +1,10 @@
+"""
+ Nothing really special yet, slowly porting bad code
+"""
+import time
 from copy import deepcopy
 import requests
+from pprint import pprint
 # from itertools import chain
 # from collections import namedtuple
 
@@ -70,7 +75,7 @@ def parse_post(post_dict):
 
 def parse_posts(children):
     '''
-    :param children: Dict as given by response.json()['data']['children]
+    :param children: Dict as given by response.json()['data']['children']
     '''
     return [parse_post(child['data'])
             for child in children]
@@ -93,6 +98,10 @@ def get_subreddit_top_recursive(subreddit, top_options=None, depth=1):
 
     posts = []
     for i in range(0, depth):
+        #  Reddit asks for a limit of 2s
+        #  Need a proper queue
+        time.sleep(2)
+
         result = get_subreddit_top(subreddit, top_options=top_options)
 
         #  Next posts fetched will start after this posts last
@@ -135,3 +144,4 @@ def get_subreddit_top(subreddit, top_options=None):
 
 if __name__ == '__main__':
     res = get_subreddit_top_recursive('python', depth=2)
+    pprint(res)
